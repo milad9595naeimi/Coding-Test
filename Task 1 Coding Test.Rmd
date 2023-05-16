@@ -1,0 +1,141 @@
+---
+title: "Task 1 Coding Test"
+author: "Milad Naeimi"
+date: "2023-05-16"
+output: pdf_document
+---
+
+
+####Task 1
+
+#First of all, we need to import data first. First, we should load the the necessary library in R for reading JSON files
+```{r}
+#install.packages("jsonlite")
+library(jsonlite)
+#install.packages("httr")
+library(httr)
+#install.packages("base64enc")
+library(base64enc)
+```
+
+####Setting the root File
+```{r}
+setwd("C:/Users/milad/OneDrive/Desktop/Jobs/Coding Tasks/task3")
+getwd()
+```
+
+####Read JSON file
+```{r}
+data1 <- fromJSON("following.json")
+View(data1)
+```
+
+```{r}
+library(httr)
+library(jsonlite)
+
+# Set your Twitter API credentials
+consumer_key <- "sDEiLW3hCwg2TNrsEv2yHlqjY"
+consumer_secret <- "qil3TQKacVhRsjrRwI7y7COSwNBGyIHDtraDCJu4dt5hcPRpBX"
+access_token <- "1657930413115944960-79b4XMRZ07xZ1ohPKTRhsLsDJj4Ajr"
+access_token_secret <- "Vors3nE0uXpf5eAzbGuv9G0JXWtIMxOuBDxoar4TeDYdY"
+
+# Set your Twitter handle
+twitter_handle <- "MiladNaeim34349"
+
+# Get bearer token for authentication
+auth_url <- "https://api.twitter.com/oauth2/token"
+auth_body <- list(grant_type = "client_credentials")
+auth_header <- paste(consumer_key, consumer_secret, sep = ":")
+auth_header <- paste("Basic", base64enc::base64encode(charToRaw(auth_header)), sep = " ")
+auth_response <- POST(auth_url, body = auth_body, add_headers(Authorization = auth_header))
+bearer_token <- content(auth_response)$access_token
+
+# Set API endpoint URLs
+user_url <- paste0("https://api.twitter.com/2/users/by/username/", twitter_handle)
+tweets_url <- paste0("https://api.twitter.com/2/users/by/username/", twitter_handle, "/tweets")
+
+# Get user details
+user_response <- GET(user_url, add_headers(Authorization = paste("Bearer", bearer_token)))
+user_data <- content(user_response, as = "parsed")
+
+# Extract relevant information
+user_id <- user_data$data$id
+user_name <- user_data$data$name
+creation_date <- user_data$data$created_at
+
+# Get pinned tweet ID
+tweets_response <- GET(tweets_url, add_headers(Authorization = paste("Bearer", bearer_token)))
+tweets_data <- content(tweets_response, as = "parsed")
+
+# Check if a pinned tweet exists
+if (!is.null(tweets_data$data) && length(tweets_data$data) > 0) {
+  pinned_tweet_id <- ifelse(tweets_data$data[[1]]$referenced_tweets$`type`[1] == "pinned",
+                            tweets_data$data[[1]]$id,
+                            NA)
+} else {
+  pinned_tweet_id <- NA
+}
+# Create a data frame if all information is available
+if (!is.null(user_id) && !is.null(user_name) && !is.null(creation_date)) {
+  account_data <- data.frame(User_ID = user_id,
+                             User_Name = user_name,
+                             Pinned_Tweet_ID = pinned_tweet_id,
+                             Creation_Date = creation_date)
+  
+  # Print the data frame
+  print(account_data)
+} else {
+  stop("Insufficient data available. Please check the Twitter handle.")
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

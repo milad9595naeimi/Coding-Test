@@ -1,0 +1,168 @@
+---
+title: Task 3 Coding Test
+author: "Milad Naeimi"
+date: "2023-05-15"
+output: pdf_document
+---
+
+####Task 3
+#Step 1: Network overlap: with the "following.json" dataset, write a function that takes any two influencers' user ID's and calculate the fraction of followers these two influencers share over the total number of followers of the less followed influencer. The reference date is April 30, 2022.	
+
+####Setting the root File
+```{r}
+setwd("C:/Users/milad/OneDrive/Desktop/Jobs/Coding Tasks/task3")
+getwd()
+```
+
+```{r}
+library(dplyr)
+library(stringr)
+library(jsonlite)
+library(dplyr)
+#install.packages("anytime")
+library(anytime)
+#install.packages("lubridate")
+library(lubridate)
+calculate_network_overlap <- function(user1_id, user2_id) {
+  # Load the "following.json" dataset
+  following_data <- fromJSON("following.json")
+# Extract the date from the time string using regular expressions
+  following_data$follow_timestamp <- gsub("\\..*$", "", following_data$follow_timestamp)  # Remove milliseconds
+  following_data$follow_timestamp <- gsub("T", " ", following_data$follow_timestamp)  # Replace 'T' with space
+  following_data$follow_timestamp <- as.Date(following_data$follow_timestamp)
+
+  # Filter data for the reference date (April 30, 2022)
+  reference_date <- as.Date("2022-04-30")
+  following_data <- following_data %>% filter(follow_timestamp <= reference_date)
+
+  # Get the number of followers for user1 and user2
+  user1_followers <- following_data %>% filter(influencer_uid == user1_id) %>% distinct(follower_uid)
+  user2_followers <- following_data %>% filter(influencer_uid == user2_id) %>% distinct(follower_uid)
+
+  # Count the number of followers for user1 and user2
+  user1_followers_count <- nrow(user1_followers)
+  user2_followers_count <- nrow(user2_followers)
+
+  # Calculate the fraction of followers shared by the two influencers
+  overlap_fraction <- nrow(intersect(user1_followers, user2_followers)) / min(user1_followers_count, user2_followers_count)
+
+  return(overlap_fraction)
+}
+
+# Example usage
+influencer1_id <- "902200087"  
+influencer2_id <- "14709326"  
+
+overlap_fraction <- calculate_network_overlap(influencer1_id, influencer2_id)
+print(overlap_fraction)
+
+```
+
+
+
+#Step 2: Engagement overlap: with the "engagement.json" dataset, write a function that takes any two influencers' user ID's and calculate the fraction of engagers of these two influencers' tweets as a function of the total number of engagers of the less engaged influencer, over the period of April 22, 2022 to April 30, 2022.										
+```{r}
+library(jsonlite)
+library(dplyr)
+calculate_engagement_overlap <- function(user_id1, user_id2) {
+  # Load the engagement data from "engagement.json"
+  data <- jsonlite::read_json("engagement.json")
+  
+  # Extract the date from the time string using regular expressions
+  data$follow_timestamp <- gsub("\\..*$", "", data$follow_timestamp)  # Remove milliseconds
+  data$follow_timestamp <- gsub("T", " ", data$follow_timestamp)  # Replace 'T' with space
+  data$follow_timestamp <- as.Date(data$follow_timestamp)
+
+  # Filter the data for the specified time period (April 22, 2022, to April 30, 2022)
+reference_date1 <- as.Date("2022-04-22")
+reference_date2 <- as.Date("2022-04-30")
+
+filtered_data <- data %>% 
+  filter(follow_timestamp >= reference_date1 & follow_timestamp <= reference_date2)
+  # Filter the data for the specified time period (April 22, 2022, to April 30, 2022)
+  filtered_data <- data[data$follow_timestamp >= 1650624000 & data$follow_timestamp <= 1651382399, ]
+  
+  # Find the tweets of the two influencers
+  influencer1_tweets <- filtered_data[filtered_data$influencer_uid == user_id1, ]
+  influencer2_tweets <- filtered_data[filtered_data$influencer_uid == user_id2, ]
+  
+  # Calculate the number of engagers for each influencer
+  influencer1_engagers <- unique(unlist(influencer1_tweets$follower_uid))
+  influencer2_engagers <- unique(unlist(influencer2_tweets$follower_uid))
+  
+  # Calculate the fraction of engagers of the less engaged influencer
+  num_engagers_less_engaged <- min(length(influencer1_engagers), length(influencer2_engagers))
+  
+  if (num_engagers_less_engaged == 0) {
+    return(0)
+  }
+  
+  fraction_overlap <- length(intersect(influencer1_engagers, influencer2_engagers)) / num_engagers_less_engaged
+  
+  return(fraction_overlap)
+}
+
+# Example usage
+user_id1 <- "902200087"
+user_id2 <- "14709326"
+engagement_overlap <- calculate_engagement_overlap(user_id1, user_id2)
+cat(paste("Engagement overlap fraction between", user_id1, "and", user_id2, ":", overlap_fraction))
+
+```
+#Step 3: Produce two histograms of network overlap (Step 2) and engagement overlap (Step 3) measures, respectively, across all influencer pairs										
+```{r}
+# Create a new plotting window
+dev.new()
+
+# Plot histogram for network overlap
+hist(overlap_fraction, main = "Network Overlap", xlab = "Overlap", col = "blue")
+
+# Create a new plotting window
+dev.new()
+
+# Plot histogram for engagement overlap
+hist(overlap_fraction_engagement, main = "Engagement Overlap", xlab = "Overlap", col = "green")
+```
+
+
+#Step 5: Use OLS to regress engagement overlap on network overlap measures for all influencers pairs, and plot the regression results on a two-dimensional graph with standard error bands.										
+```{r}
+# Create a data frame with the variables
+dataset <- data.frame(network_overlap, engagement_overlap)
+
+# Perform OLS regression
+model <- lm(engagement_overlap ~ network_overlap, data = data)
+
+# Calculate predicted values and standard errors
+predicted <- predict(model)
+se <- sqrt(diag(vcov(model)))
+
+# Plot regression results with standard error bands
+plot(network_overlap, engagement_overlap, pch = 16, xlab = "Network Overlap", ylab = "Engagement Overlap", main = "Regression of Engagement Overlap on Network Overlap")
+abline(model, col = "blue")  # Regression line
+lines(network_overlap, predicted, col = "red")  # Predicted values
+lines(network_overlap, predicted + 2*se, col = "green", lty = "dashed")  # Upper bound (2 standard errors)
+lines(network_overlap, predicted - 2*se, col = "green", lty = "dashed")  # Lower bound (2 standard errors)
+legend("topleft", legend = c("Regression Line", "Predicted Values", "Standard Error Bands"), col = c("blue", "red", "green"), lty = c(1, 1, "dashed"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

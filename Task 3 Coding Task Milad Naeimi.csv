@@ -1,0 +1,7 @@
+﻿I chcked every tweet ID in tweeter. I enetered every tweet ID in the following URL: twitter.com/anyuser/status/ and saw their contents. 
+I treated every varaible as a dummy variable.
+"I put the vlaue of 1 for misinformation, if the tweeter account did not have a blue sticker. Otherise, vlaue of 0."
+"I put missing value (NA) for all category observations, as that information was not requested by the task. "
+"I looked at the content and tweeter account to determine whether it is from a news agency like Reuters or not. Based on that, I determined whether it is a breaking news or not.   "
+"I it was not a breaking, I labeled it as a normal news. "
+"I labeled all opinions which were supporting abortion law as an individual choice as a pro-choice, and those agaist abortion law as a pro-life. "
